@@ -1,0 +1,419 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Resume Autofill Pro User Profile",
+  "description": "Schema for storing user profile data for job application autofill",
+  "type": "object",
+  "properties": {
+    "personalInfo": {
+      "type": "object",
+      "description": "Basic personal information",
+      "properties": {
+        "firstName": {
+          "type": "string",
+          "description": "First/Given name"
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Last/Family name"
+        },
+        "middleName": {
+          "type": "string",
+          "description": "Middle name"
+        },
+        "preferredName": {
+          "type": "string",
+          "description": "Preferred name/Nickname"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Full name (auto-generated if not provided)"
+        }
+      }
+    },
+    
+    "contactInfo": {
+      "type": "object",
+      "description": "Contact information",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Primary email address"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number"
+        },
+        "countryCode": {
+          "type": "string",
+          "description": "Phone country code (e.g., +1)"
+        },
+        "alternateEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "Alternate email address"
+        },
+        "alternatePhone": {
+          "type": "string",
+          "description": "Alternate phone number"
+        }
+      }
+    },
+    
+    "location": {
+      "type": "object",
+      "description": "Location/Address information",
+      "properties": {
+        "currentCity": {
+          "type": "string",
+          "description": "Current city"
+        },
+        "currentState": {
+          "type": "string",
+          "description": "Current state/province"
+        },
+        "zipCode": {
+          "type": "string",
+          "description": "ZIP/Postal code"
+        },
+        "country": {
+          "type": "string",
+          "description": "Country of residence"
+        },
+        "streetAddress": {
+          "type": "string",
+          "description": "Street address"
+        },
+        "addressLine2": {
+          "type": "string",
+          "description": "Apartment, suite, etc."
+        }
+      }
+    },
+    
+    "professionalLinks": {
+      "type": "object",
+      "description": "Professional online profiles",
+      "properties": {
+        "linkedinUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "LinkedIn profile URL"
+        },
+        "githubUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "GitHub profile URL"
+        },
+        "portfolioWebsite": {
+          "type": "string",
+          "format": "uri",
+          "description": "Personal website/Portfolio URL"
+        },
+        "twitterUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Twitter/X profile URL"
+        },
+        "otherUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Other relevant URL"
+        }
+      }
+    },
+    
+    "education": {
+      "type": "array",
+      "description": "Education history (most recent first)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "schoolName": {
+            "type": "string",
+            "description": "School/University name"
+          },
+          "degreeType": {
+            "type": "string",
+            "description": "Degree type (e.g., Bachelor's, Master's, PhD)",
+            "enum": [
+              "High School Diploma",
+              "GED",
+              "Associate's",
+              "Bachelor's",
+              "Master's",
+              "MBA",
+              "PhD",
+              "JD",
+              "MD",
+              "Certificate",
+              "Bootcamp",
+              "Other"
+            ]
+          },
+          "major": {
+            "type": "string",
+            "description": "Major/Field of study"
+          },
+          "minor": {
+            "type": "string",
+            "description": "Minor (if any)"
+          },
+          "gpa": {
+            "type": "string",
+            "description": "GPA (e.g., 3.8/4.0)"
+          },
+          "graduationDate": {
+            "type": "string",
+            "description": "Graduation date (YYYY-MM or YYYY)"
+          },
+          "startDate": {
+            "type": "string",
+            "description": "Start date"
+          },
+          "location": {
+            "type": "string",
+            "description": "School location"
+          },
+          "honors": {
+            "type": "string",
+            "description": "Honors, awards, or distinctions"
+          }
+        }
+      }
+    },
+    
+    "workExperience": {
+      "type": "array",
+      "description": "Work experience history (most recent first)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "employer": {
+            "type": "string",
+            "description": "Company/Employer name"
+          },
+          "jobTitle": {
+            "type": "string",
+            "description": "Job title/Position"
+          },
+          "startDate": {
+            "type": "string",
+            "description": "Start date (YYYY-MM)"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "End date (YYYY-MM) or 'Present'"
+          },
+          "isCurrent": {
+            "type": "boolean",
+            "description": "Is this the current job?"
+          },
+          "location": {
+            "type": "string",
+            "description": "Job location"
+          },
+          "description": {
+            "type": "string",
+            "description": "Job description/responsibilities"
+          },
+          "achievements": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Key achievements"
+          }
+        }
+      }
+    },
+    
+    "skills": {
+      "type": "object",
+      "description": "Skills and competencies",
+      "properties": {
+        "technical": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Technical skills"
+        },
+        "soft": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Soft skills"
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "language": { "type": "string" },
+              "proficiency": { 
+                "type": "string",
+                "enum": ["Native", "Fluent", "Professional", "Conversational", "Basic"]
+              }
+            }
+          },
+          "description": "Language proficiencies"
+        },
+        "allSkills": {
+          "type": "string",
+          "description": "Comma-separated list of all skills (for text fields)"
+        }
+      }
+    },
+    
+    "certifications": {
+      "type": "array",
+      "description": "Professional certifications",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Certification name"
+          },
+          "issuer": {
+            "type": "string",
+            "description": "Issuing organization"
+          },
+          "dateObtained": {
+            "type": "string",
+            "description": "Date obtained"
+          },
+          "expirationDate": {
+            "type": "string",
+            "description": "Expiration date (if applicable)"
+          },
+          "credentialId": {
+            "type": "string",
+            "description": "Credential ID/Number"
+          }
+        }
+      }
+    },
+    
+    "legalCompliance": {
+      "type": "object",
+      "description": "Work authorization and legal information",
+      "properties": {
+        "workAuthorization": {
+          "type": "string",
+          "description": "Work authorization status",
+          "enum": [
+            "US Citizen",
+            "Permanent Resident (Green Card)",
+            "H-1B Visa",
+            "OPT/CPT",
+            "Other Work Visa",
+            "Requires Sponsorship",
+            "Not Authorized"
+          ]
+        },
+        "sponsorshipRequired": {
+          "type": "boolean",
+          "description": "Do you require visa sponsorship?"
+        },
+        "sponsorshipDetails": {
+          "type": "string",
+          "description": "Details about sponsorship needs"
+        }
+      }
+    },
+    
+    "demographics": {
+      "type": "object",
+      "description": "Optional demographic information (EEO)",
+      "properties": {
+        "race": {
+          "type": "string",
+          "description": "Race"
+        },
+        "ethnicity": {
+          "type": "string",
+          "description": "Ethnicity (Hispanic/Latino or not)"
+        },
+        "gender": {
+          "type": "string",
+          "description": "Gender identity"
+        },
+        "veteranStatus": {
+          "type": "string",
+          "description": "Veteran status"
+        },
+        "disabilityStatus": {
+          "type": "string",
+          "description": "Disability status"
+        }
+      }
+    },
+    
+    "applicationPreferences": {
+      "type": "object",
+      "description": "Job search preferences",
+      "properties": {
+        "desiredSalary": {
+          "type": "string",
+          "description": "Desired salary or range"
+        },
+        "minimumSalary": {
+          "type": "string",
+          "description": "Minimum acceptable salary"
+        },
+        "noticePeriod": {
+          "type": "string",
+          "description": "Notice period / Availability to start"
+        },
+        "relocationPreference": {
+          "type": "string",
+          "description": "Willingness to relocate",
+          "enum": ["Yes", "No", "Negotiable", "Remote Only"]
+        },
+        "workPreference": {
+          "type": "string",
+          "description": "Work arrangement preference",
+          "enum": ["Remote", "On-site", "Hybrid", "Flexible"]
+        },
+        "howDidYouHear": {
+          "type": "string",
+          "description": "Default answer for 'How did you hear about us?'"
+        }
+      }
+    },
+    
+    "longFormContent": {
+      "type": "object",
+      "description": "Long-form text content for applications",
+      "properties": {
+        "coverLetterTemplate": {
+          "type": "string",
+          "description": "Default cover letter template"
+        },
+        "whyWorkHereTemplate": {
+          "type": "string",
+          "description": "Template for 'Why do you want to work here?'"
+        },
+        "professionalSummary": {
+          "type": "string",
+          "description": "Professional summary/About me"
+        },
+        "additionalInfo": {
+          "type": "string",
+          "description": "Additional information"
+        },
+        "behavioralResponses": {
+          "type": "object",
+          "description": "Pre-written responses to common behavioral questions",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    
+    "resumeText": {
+      "type": "string",
+      "description": "Full resume text (for parsing and AI generation)"
+    }
+  },
+  
+  "required": [],
+  
+  "additionalProperties": true
+}

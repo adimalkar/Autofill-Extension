@@ -1,0 +1,169 @@
+/**
+ * Content Styles for Resume Autofill Pro
+ * 
+ * Styles for visual feedback when fields are filled
+ */
+
+/* Filled field highlight */
+.autofill-pro-filled {
+    background-color: #e0f2fe !important;
+    border-color: #3b82f6 !important;
+    border-width: 2px !important;
+    border-style: solid !important;
+    transition: all 0.3s ease !important;
+}
+
+/* Pending field (needs manual input) */
+.autofill-pro-pending {
+    background-color: #fef3c7 !important;
+    border-color: #f59e0b !important;
+    border-width: 2px !important;
+    border-style: dashed !important;
+    transition: all 0.3s ease !important;
+}
+
+/* Error field */
+.autofill-pro-error {
+    background-color: #fee2e2 !important;
+    border-color: #ef4444 !important;
+    border-width: 2px !important;
+    border-style: solid !important;
+    transition: all 0.3s ease !important;
+}
+
+/* AI-generated content */
+.autofill-pro-ai {
+    background-color: #f3e8ff !important;
+    border-color: #a855f7 !important;
+    border-width: 2px !important;
+    border-style: solid !important;
+    transition: all 0.3s ease !important;
+}
+
+/* File input that needs manual action */
+.autofill-pro-file-pending {
+    border: 2px dashed #f97316 !important;
+    background-color: #fff7ed !important;
+    padding: 10px !important;
+    border-radius: 4px !important;
+}
+
+/* Notification toast */
+#autofill-pro-notification {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    padding: 12px 20px !important;
+    background-color: #3b82f6 !important;
+    color: white !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    z-index: 999999 !important;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    animation: autofill-pro-slide-in 0.3s ease !important;
+}
+
+#autofill-pro-notification.success {
+    background-color: #10b981 !important;
+}
+
+#autofill-pro-notification.warning {
+    background-color: #f59e0b !important;
+}
+
+#autofill-pro-notification.error {
+    background-color: #ef4444 !important;
+}
+
+/* Animations */
+@keyframes autofill-pro-slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes autofill-pro-slide-out {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes autofill-pro-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+    }
+}
+
+/* Pulse animation for newly filled fields */
+.autofill-pro-pulse {
+    animation: autofill-pro-pulse 1s ease-in-out !important;
+}
+
+/* Floating action button (optional, for easy access) */
+#autofill-pro-fab {
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    width: 56px !important;
+    height: 56px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%) !important;
+    color: white !important;
+    border: none !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+    z-index: 999998 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 24px !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+#autofill-pro-fab:hover {
+    transform: scale(1.1) !important;
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5) !important;
+}
+
+#autofill-pro-fab:active {
+    transform: scale(0.95) !important;
+}
+
+/* Tooltip for fields */
+.autofill-pro-tooltip {
+    position: absolute !important;
+    background-color: #1f2937 !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-size: 12px !important;
+    z-index: 999997 !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+}
+
+.autofill-pro-tooltip::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 50% !important;
+    margin-left: -4px !important;
+    border-width: 4px !important;
+    border-style: solid !important;
+    border-color: #1f2937 transparent transparent transparent !important;
+}

@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Autofill Pro - Settings</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        /* Container */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+            background: white;
+            padding: 4px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+        
+        .tab:hover {
+            background: #f1f5f9;
+        }
+        
+        .tab.active {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        /* Sections */
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .section h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        /* Form groups */
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .form-row.single {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+        
+        /* Actions bar */
+        .actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 16px;
+        }
+        
+        /* Tab content */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Success/Error messages */
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        
+        .message.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        /* Toggle switch */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .toggle-group:last-child {
+            border-bottom: none;
+        }
+        
+        .toggle-label {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .toggle-label span {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .toggle-label small {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+        
+        .toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+        }
+        
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        
+        .toggle input:checked + .toggle-slider {
+            background-color: #3b82f6;
+        }
+        
+        .toggle input:checked + .toggle-slider:before {
+            transform: translateX(20px);
+        }
+        
+        /* Import section */
+        .import-box {
+            border: 2px dashed #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 16px;
+            transition: all 0.2s;
+        }
+        
+        .import-box:hover {
+            border-color: #3b82f6;
+            background: #f8fafc;
+        }
+        
+        .import-box input[type="file"] {
+            display: none;
+        }
+        
+        .import-box label {
+            cursor: pointer;
+            color: #3b82f6;
+            font-weight: 500;
+        }
+        
+        /* Resume Import Hero Section */
+        .resume-import-hero {
+            background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .resume-import-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+        }
+        
+        .resume-import-hero h2 {
+            font-size: 22px;
+            margin-bottom: 8px;
+            font-weight: 700;
+            position: relative;
+        }
+        
+        .resume-import-hero p {
+            opacity: 0.9;
+            margin-bottom: 20px;
+            font-size: 14px;
+            position: relative;
+        }
+        
+        .resume-drop-zone {
+            background: rgba(255,255,255,0.15);
+            border: 2px dashed rgba(255,255,255,0.5);
+            border-radius: 12px;
+            padding: 32px 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .resume-drop-zone:hover,
+        .resume-drop-zone.drag-over {
+            background: rgba(255,255,255,0.25);
+            border-color: white;
+            transform: scale(1.02);
+        }
+        
+        .resume-drop-zone .drop-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+        }
+        
+        .resume-drop-zone .drop-text {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .resume-drop-zone .drop-hint {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .resume-drop-zone input {
+            display: none;
+        }
+        
+        /* Parsing Progress */
+        .parsing-progress {
+            display: none;
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .parsing-progress.active {
+            display: block;
+        }
+        
+        .progress-bar-container {
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: white;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .progress-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Parsing Results Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 16px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 85vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+        }
+        
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #64748b;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+        
+        .modal-close:hover {
+            background: #f1f5f9;
+        }
+        
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        /* Confidence Badge */
+        .confidence-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .confidence-high {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .confidence-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .confidence-low {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        /* Parsed Fields Table */
+        .parsed-fields {
+            width: 100%;
+        }
+        
+        .parsed-field-row {
+            display: grid;
+            grid-template-columns: 140px 1fr 80px;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+            align-items: center;
+        }
+        
+        .parsed-field-row:last-child {
+            border-bottom: none;
+        }
+        
+        .parsed-field-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #64748b;
+        }
+        
+        .parsed-field-value {
+            font-size: 14px;
+            color: #1e293b;
+        }
+        
+        .parsed-field-value input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .parsed-field-value input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Summary Stats */
+        .parsing-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .summary-stat {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .summary-stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+        
+        .summary-stat-label {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        
+        .summary-stat.success .summary-stat-value {
+            color: #10b981;
+        }
+        
+        .summary-stat.warning .summary-stat-value {
+            color: #f59e0b;
+        }
+        
+        /* File Info */
+        .file-info {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .file-info-icon {
+            font-size: 24px;
+        }
+        
+        .file-info-details {
+            flex: 1;
+        }
+        
+        .file-info-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .file-info-meta {
+            font-size: 12px;
+            color: #64748b;
+        }
+        
+        /* Section Divider */
+        .section-divider {
+            margin: 24px 0;
+            padding-top: 16px;
+            border-top: 2px solid #e2e8f0;
+        }
+        
+        .section-divider h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ Resume Autofill Pro</h1>
+        <p>Configure your profile and settings</p>
+    </div>
+    
+    <div class="container">
+        <!-- Resume Import Hero Section -->
+        <div class="resume-import-hero">
+            <h2>Quick Start: Import Your Resume</h2>
+            <p>Upload your resume and we'll automatically fill in your profile information</p>
+            
+            <div class="resume-drop-zone" id="resumeDropZone">
+                <div class="drop-icon">📄</div>
+                <div class="drop-text">Drop your resume here or click to browse</div>
+                <div class="drop-hint">Supports PDF, DOCX, DOC, and TXT files (max 10MB)</div>
+                <input type="file" id="resumeFileInput" accept=".pdf,.docx,.doc,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/plain">
+            </div>
+            
+            <div class="parsing-progress" id="parsingProgress">
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="progress-text">
+                    <div class="progress-spinner"></div>
+                    <span id="progressText">Processing...</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" data-tab="personal">Personal Info</button>
+            <button class="tab" data-tab="professional">Professional</button>
+            <button class="tab" data-tab="education">Education</button>
+            <button class="tab" data-tab="preferences">Preferences</button>
+            <button class="tab" data-tab="settings">Settings</button>
+        </div>
+        
+        <div id="message" class="message" style="display: none;"></div>
+        
+        <!-- Personal Info Tab -->
+        <div class="tab-content active" data-tab="personal">
+            <div class="section">
+                <h2>Basic Information</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" id="firstName" placeholder="John">
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" id="lastName" placeholder="Doe">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Middle Name</label>
+                        <input type="text" id="middleName" placeholder="Optional">
+                    </div>
+                    <div class="form-group">
+                        <label>Preferred Name</label>
+                        <input type="text" id="preferredName" placeholder="Optional">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Contact Information</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="email" placeholder="john@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="phone" placeholder="+1 (555) 123-4567">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Location</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>City</label>
+                        <input type="text" id="currentCity" placeholder="New York">
+                    </div>
+                    <div class="form-group">
+                        <label>State/Province</label>
+                        <input type="text" id="currentState" placeholder="NY">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>ZIP/Postal Code</label>
+                        <input type="text" id="zipCode" placeholder="10001">
+                    </div>
+                    <div class="form-group">
+                        <label>Country</label>
+                        <input type="text" id="country" placeholder="United States">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Professional Tab -->
+        <div class="tab-content" data-tab="professional">
+            <div class="section">
+                <h2>Professional Links</h2>
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label>LinkedIn URL</label>
+                        <input type="url" id="linkedinUrl" placeholder="https://linkedin.com/in/johndoe">
+                    </div>
+                </div>
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label>GitHub URL</label>
+                        <input type="url" id="githubUrl" placeholder="https://github.com/johndoe">
+                    </div>
+                </div>
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label>Portfolio/Website</label>
+                        <input type="url" id="portfolioWebsite" placeholder="https://johndoe.com">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Employment</h2>
+                <p style="font-size: 12px; color: #64748b; margin-bottom: 16px;">Your most recent work experience</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Employer/Company</label>
+                        <input type="text" id="currentEmployer" placeholder="Company Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Job Title</label>
+                        <input type="text" id="currentJobTitle" placeholder="Software Engineer">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="text" id="jobStartDate" placeholder="Jan 2023">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date</label>
+                        <input type="text" id="jobEndDate" placeholder="Present or Dec 2024">
+                    </div>
+                </div>
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label>Job Description</label>
+                        <textarea id="jobDescription" placeholder="Brief description of your responsibilities and achievements..." rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label>Reason for Leaving</label>
+                        <input type="text" id="reasonForLeaving" placeholder="e.g., Career growth, Relocation, Contract ended">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Skills</h2>
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label>Skills (comma-separated)</label>
+                        <textarea id="skills" placeholder="JavaScript, Python, React, Node.js, AWS..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Education Tab -->
+        <div class="tab-content" data-tab="education">
+            <div class="section">
+                <h2>Education</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>School/University</label>
+                        <input type="text" id="schoolName" placeholder="University Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Degree Type</label>
+                        <select id="degreeType">
+                            <option value="">Select...</option>
+                            <option value="High School">High School Diploma</option>
+                            <option value="Associate">Associate's Degree</option>
+                            <option value="Bachelor of Science">Bachelor of Science (BS/BSc)</option>
+                            <option value="Bachelor of Arts">Bachelor of Arts (BA)</option>
+                            <option value="Bachelor of Engineering">Bachelor of Engineering (BE/BTech)</option>
+                            <option value="Master of Science">Master of Science (MS/MSc)</option>
+                            <option value="Master of Arts">Master of Arts (MA)</option>
+                            <option value="Master of Engineering">Master of Engineering (ME/MTech)</option>
+                            <option value="Master of Business Administration">Master of Business Administration (MBA)</option>
+                            <option value="Doctor of Philosophy">Doctor of Philosophy (PhD)</option>
+                            <option value="Certificate">Certificate</option>
+                            <option value="Bootcamp">Bootcamp</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Major/Field of Study</label>
+                        <input type="text" id="major" placeholder="Computer Science">
+                    </div>
+                    <div class="form-group">
+                        <label>GPA</label>
+                        <input type="text" id="gpa" placeholder="3.8/4.0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input type="text" id="educationStartDate" placeholder="Aug 2019">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date / Graduation</label>
+                        <input type="text" id="educationEndDate" placeholder="May 2023 or Expected May 2025">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Preferences Tab -->
+        <div class="tab-content" data-tab="preferences">
+            <div class="section">
+                <h2>Work Authorization</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Work Authorization Status</label>
+                        <select id="workAuthorization">
+                            <option value="">Select...</option>
+                            <option value="US Citizen">US Citizen</option>
+                            <option value="Permanent Resident">Permanent Resident (Green Card)</option>
+                            <option value="H-1B Visa">H-1B Visa</option>
+                            <option value="OPT/CPT">OPT/CPT</option>
+                            <option value="Other Work Visa">Other Work Visa</option>
+                            <option value="Requires Sponsorship">Requires Sponsorship</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Require Visa Sponsorship?</label>
+                        <select id="sponsorshipRequired">
+                            <option value="">Select...</option>
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Job Preferences</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Desired Salary</label>
+                        <input type="text" id="desiredSalary" placeholder="$100,000 - $120,000">
+                    </div>
+                    <div class="form-group">
+                        <label>Notice Period</label>
+                        <input type="text" id="noticePeriod" placeholder="2 weeks">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Willing to Relocate?</label>
+                        <select id="relocationPreference">
+                            <option value="">Select...</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                            <option value="Negotiable">Negotiable</option>
+                            <option value="Remote Only">Remote Only</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>How Did You Hear About Us?</label>
+                        <input type="text" id="howDidYouHear" placeholder="LinkedIn, Job Board, etc.">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Cover Letter Template</h2>
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label>Default Cover Letter</label>
+                        <textarea id="coverLetterTemplate" rows="8" placeholder="Enter your default cover letter template..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div class="tab-content" data-tab="settings">
+            <div class="section">
+                <h2>Autofill Behavior</h2>
+                <div class="toggle-group">
+                    <div class="toggle-label">
+                        <span>Human-like Typing</span>
+                        <small>Type with realistic delays to avoid bot detection</small>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="useHumanEmulation" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <div class="toggle-label">
+                        <span>Show Notifications</span>
+                        <small>Display results after autofill completes</small>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="showNotifications" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <div class="toggle-label">
+                        <span>Highlight Filled Fields</span>
+                        <small>Add visual indicator to filled fields</small>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="highlightFilledFields" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>AI Features (Tier 3)</h2>
+                <div class="toggle-group">
+                    <div class="toggle-label">
+                        <span>Enable Cloud AI</span>
+                        <small>Use GPT-4/Gemini for cover letters and complex questions</small>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="tier3Enabled">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div id="apiKeySection" style="display: none; margin-top: 16px;">
+                    <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;">
+                        Add at least one API key for AI-powered resume parsing. OpenRouter (DeepSeek) is recommended for cost-efficiency.
+                    </p>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>OpenRouter API Key (Recommended - DeepSeek)</label>
+                            <input type="password" id="openrouterKey" placeholder="sk-or-...">
+                            <small style="color: #94a3b8; font-size: 11px;">Free at openrouter.ai - uses DeepSeek for parsing</small>
+                        </div>
+                        <div class="form-group">
+                            <label>OpenAI API Key</label>
+                            <input type="password" id="openaiKey" placeholder="sk-...">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Google Gemini API Key</label>
+                            <input type="password" id="geminiKey" placeholder="AI...">
+                        </div>
+                        <div class="form-group">
+                            <label>Preferred Provider</label>
+                            <select id="preferredProvider">
+                                <option value="openrouter">OpenRouter (DeepSeek - Cheapest)</option>
+                                <option value="openai">OpenAI (GPT-4o-mini)</option>
+                                <option value="gemini">Google Gemini</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Import Profile</h2>
+                <div class="import-box">
+                    <p>📄 <label for="importFile">Click to import profile from JSON file</label></p>
+                    <input type="file" id="importFile" accept=".json">
+                </div>
+                <div class="actions" style="border-top: none; padding-top: 0;">
+                    <button class="btn btn-secondary" id="exportBtn">Export Profile</button>
+                    <button class="btn btn-secondary" id="resetBtn" style="color: #ef4444;">Reset All Data</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+            <button class="btn btn-primary" id="saveBtn">Save Changes</button>
+        </div>
+    </div>
+    
+    <!-- Parsing Results Modal -->
+    <div class="modal-overlay" id="parsingResultsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Resume Parsing Results</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- File info -->
+                <div class="file-info" id="fileInfoDisplay">
+                    <span class="file-info-icon">📄</span>
+                    <div class="file-info-details">
+                        <div class="file-info-name" id="parsedFileName">resume.pdf</div>
+                        <div class="file-info-meta" id="parsedFileMeta">PDF • 2 pages • 156KB</div>
+                    </div>
+                </div>
+                
+                <!-- Summary stats -->
+                <div class="parsing-summary">
+                    <div class="summary-stat success">
+                        <div class="summary-stat-value" id="statFieldsFound">0</div>
+                        <div class="summary-stat-label">Fields Found</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-value" id="statHighConfidence">0</div>
+                        <div class="summary-stat-label">High Confidence</div>
+                    </div>
+                    <div class="summary-stat warning">
+                        <div class="summary-stat-value" id="statNeedsReview">0</div>
+                        <div class="summary-stat-label">Needs Review</div>
+                    </div>
+                </div>
+                
+                <!-- Recommendation -->
+                <div class="message" id="parsingRecommendation" style="display: block;"></div>
+                
+                <!-- Parsed fields list -->
+                <div class="section-divider">
+                    <h4>Extracted Information</h4>
+                </div>
+                
+                <div class="parsed-fields" id="parsedFieldsList">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="discardParsed">Discard</button>
+                <button class="btn btn-primary" id="applyParsed">Apply to Profile</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="options.js" type="module"></script>
+</body>
+</html>
