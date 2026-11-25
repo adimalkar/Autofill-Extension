@@ -10,23 +10,29 @@
  */
 
 /**
- * Native input value setter - bypasses React's synthetic wrapper
- * This is the key to making React forms work.
+ * Resolve native property setter from the element's own realm so this module
+ * works in main window, iframes, Shadow DOM, and non-window test environments.
  */
-const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-    window.HTMLInputElement.prototype,
-    'value'
-)?.set;
+function getNativePropertySetter(element, propName, defaultTagName = 'INPUT') {
+    const view = element?.ownerDocument?.defaultView || globalThis;
+    const tagName = element?.tagName?.toUpperCase() || defaultTagName;
 
-const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(
-    window.HTMLTextAreaElement.prototype,
-    'value'
-)?.set;
+    let ctorName = 'HTMLInputElement';
+    if (tagName === 'TEXTAREA') {
+        ctorName = 'HTMLTextAreaElement';
+    } else if (tagName === 'SELECT') {
+        ctorName = 'HTMLSelectElement';
+    }
 
-const nativeSelectValueSetter = Object.getOwnPropertyDescriptor(
-    window.HTMLSelectElement.prototype,
-    'value'
-)?.set;
+    const proto = view?.[ctorName]?.prototype;
+    return proto ? Object.getOwnPropertyDescriptor(proto, propName)?.set : undefined;
+}
+
+function createSyntheticEvent(element, type, init = { bubbles: true, cancelable: true }) {
+    const view = element?.ownerDocument?.defaultView || globalThis;
+    const EventCtor = view?.Event || globalThis.Event;
+    return new EventCtor(type, init);
+}
 
 /**
  * Set input value in a React-compatible way
@@ -51,6 +57,7 @@ export function setReactInputValue(input, value, options = {}) {
     
     try {
         // Use native setter to bypass React's wrapper
+        const nativeInputValueSetter = getNativePropertySetter(input, 'value', 'INPUT');
         if (useNativeSetter && nativeInputValueSetter) {
             nativeInputValueSetter.call(input, value);
         } else {
@@ -90,6 +97,7 @@ export function setReactTextAreaValue(textarea, value, options = {}) {
     const previousValue = textarea.value;
     
     try {
+        const nativeTextAreaValueSetter = getNativePropertySetter(textarea, 'value', 'TEXTAREA');
         if (useNativeSetter && nativeTextAreaValueSetter) {
             nativeTextAreaValueSetter.call(textarea, value);
         } else {
@@ -132,6 +140,7 @@ export function setReactSelectValue(select, value, options = {}) {
         const matchingOption = findMatchingOption(select, value);
         
         if (matchingOption) {
+            const nativeSelectValueSetter = getNativePropertySetter(select, 'value', 'SELECT');
             if (useNativeSetter && nativeSelectValueSetter) {
                 nativeSelectValueSetter.call(select, matchingOption.value);
             } else {
@@ -214,12 +223,21 @@ function setCheckboxValue(checkbox, value, options = {}) {
                            value === 'yes' ||
                            value === checkbox.value;
     
-    if (checkbox.checked !== shouldBeChecked) {
-        checkbox.checked = shouldBeChecked;
+    const previousChecked = Boolean(checkbox.checked);
+    if (previousChecked !== shouldBeChecked) {
+        const nativeCheckedSetter = options.useNativeSetter !== false
+            ? getNativePropertySetter(checkbox, 'checked', 'INPUT')
+            : null;
+        if (nativeCheckedSetter) {
+            nativeCheckedSetter.call(checkbox, shouldBeChecked);
+        } else {
+            checkbox.checked = shouldBeChecked;
+        }
         
         if (options.dispatchEvents !== false) {
-            checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-            checkbox.dispatchEvent(new Event('input', { bubbles: true }));
+            triggerReactTracker(checkbox, previousChecked);
+            checkbox.dispatchEvent(createSyntheticEvent(checkbox, 'change'));
+            checkbox.dispatchEvent(createSyntheticEvent(checkbox, 'input'));
         }
     }
     
@@ -235,24 +253,42 @@ function setCheckboxValue(checkbox, value, options = {}) {
  * @returns {boolean} Success
  */
 function setRadioValue(radio, value, options = {}) {
-    // Find all radios in this group
+    const targetStr = String(value);
+    const normalizedTarget = targetStr.toLowerCase();
+    const applyChecked = (target) => {
+        const previousChecked = Boolean(target.checked);
+        const nativeCheckedSetter = options.useNativeSetter !== false
+            ? getNativePropertySetter(target, 'checked', 'INPUT')
+            : null;
+        if (nativeCheckedSetter) {
+            nativeCheckedSetter.call(target, true);
+        } else {
+            target.checked = true;
+        }
+        if (options.dispatchEvents !== false) {
+            triggerReactTracker(target, previousChecked);
+            target.dispatchEvent(createSyntheticEvent(target, 'change'));
+            target.dispatchEvent(createSyntheticEvent(target, 'input'));
+        }
+    };
+
+    // Find all radios in this group (supports Shadow DOM roots via getRootNode)
     const name = radio.name;
     if (!name) {
-        radio.checked = true;
+        applyChecked(radio);
         return true;
     }
     
-    const radios = document.querySelectorAll(`input[type="radio"][name="${name}"]`);
+    const root = typeof radio.getRootNode === 'function'
+        ? radio.getRootNode()
+        : (radio.ownerDocument || (typeof document !== 'undefined' ? document : null));
+    const radios = root && typeof root.querySelectorAll === 'function'
+        ? root.querySelectorAll(`input[type="radio"][name="${name}"]`)
+        : [radio];
     
     for (const r of radios) {
-        if (r.value === value || r.value.toLowerCase() === value.toLowerCase()) {
-            r.checked = true;
-            
-            if (options.dispatchEvents !== false) {
-                r.dispatchEvent(new Event('change', { bubbles: true }));
-                r.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-            
+        if (r.value === targetStr || String(r.value).toLowerCase() === normalizedTarget) {
+            applyChecked(r);
             return true;
         }
     }
@@ -272,8 +308,8 @@ function setContentEditableValue(element, value, options = {}) {
     element.textContent = value;
     
     if (options.dispatchEvents !== false) {
-        element.dispatchEvent(new Event('input', { bubbles: true }));
-        element.dispatchEvent(new Event('change', { bubbles: true }));
+        element.dispatchEvent(createSyntheticEvent(element, 'input'));
+        element.dispatchEvent(createSyntheticEvent(element, 'change'));
     }
     
     return true;
@@ -283,28 +319,26 @@ function setContentEditableValue(element, value, options = {}) {
  * Dispatch all necessary events to trigger React/Vue/Angular updates
  * 
  * @param {HTMLElement} element - Element to dispatch events on
- * @param {string} previousValue - Previous value (for some frameworks)
+ * @param {string} previousValue - Previous value (for React tracker delta detection)
  */
 function dispatchInputEvents(element, previousValue) {
     // Focus the element first (some frameworks need this)
-    if (document.activeElement !== element) {
+    const doc = element?.ownerDocument || (typeof document !== 'undefined' ? document : null);
+    if (doc && doc.activeElement !== element && typeof element.focus === 'function') {
         element.focus();
     }
     
+    // Reset React's value tracker BEFORE dispatching events so React sees a delta
+    triggerReactTracker(element, previousValue);
+    
     // Input event - React listens to this
-    const inputEvent = new Event('input', { bubbles: true, cancelable: true });
-    element.dispatchEvent(inputEvent);
+    element.dispatchEvent(createSyntheticEvent(element, 'input'));
     
     // Change event - Angular and vanilla JS listen to this
-    const changeEvent = new Event('change', { bubbles: true, cancelable: true });
-    element.dispatchEvent(changeEvent);
+    element.dispatchEvent(createSyntheticEvent(element, 'change'));
     
     // Blur event - triggers validation in many frameworks
-    const blurEvent = new Event('blur', { bubbles: true, cancelable: true });
-    element.dispatchEvent(blurEvent);
-    
-    // For React 16+, we may need to trigger the internal tracker
-    triggerReactTracker(element);
+    element.dispatchEvent(createSyntheticEvent(element, 'blur'));
 }
 
 /**
@@ -314,26 +348,42 @@ function dispatchInputEvents(element, previousValue) {
  * @param {string} previousValue - Previous value
  */
 function dispatchSelectEvents(select, previousValue) {
-    select.dispatchEvent(new Event('change', { bubbles: true }));
-    select.dispatchEvent(new Event('input', { bubbles: true }));
-    
-    // For React selects
-    triggerReactTracker(select);
+    // Reset React's value tracker BEFORE dispatching events so React sees a delta
+    triggerReactTracker(select, previousValue);
+
+    select.dispatchEvent(createSyntheticEvent(select, 'change'));
+    select.dispatchEvent(createSyntheticEvent(select, 'input'));
 }
 
 /**
  * Trigger React's internal value tracker
  * React 16+ uses a tracker to detect if value "really" changed.
+ * Must run BEFORE dispatching input/change events and set a value distinct
+ * from the element's current value (including when clearing to '').
  * 
  * @param {HTMLElement} element - Form element
+ * @param {string|boolean} previousValue - Previous value before setting
  */
-function triggerReactTracker(element) {
+function triggerReactTracker(element, previousValue) {
     // React attaches a tracker via a property like _valueTracker
-    const tracker = element._valueTracker;
-    if (tracker) {
-        // Setting to empty string forces React to see this as a new value
-        tracker.setValue('');
+    const tracker = element?._valueTracker;
+    if (!tracker || typeof tracker.setValue !== 'function') {
+        return;
     }
+
+    const isCheckable = element.type === 'checkbox' || element.type === 'radio';
+    if (isCheckable) {
+        const current = Boolean(element.checked);
+        const prevBool = previousValue !== undefined ? Boolean(previousValue) : !current;
+        const tracked = prevBool !== current ? String(prevBool) : String(!current);
+        tracker.setValue(tracked);
+        return;
+    }
+
+    const current = element.value !== undefined && element.value !== null ? String(element.value) : '';
+    const prev = previousValue !== undefined && previousValue !== null ? String(previousValue) : '';
+    const tracked = prev !== current ? prev : (current === '' ? ' ' : '');
+    tracker.setValue(tracked);
 }
 
 /**
@@ -345,35 +395,42 @@ function triggerReactTracker(element) {
  * @returns {HTMLOptionElement|null} Matching option or null
  */
 function findMatchingOption(select, targetValue) {
-    const options = Array.from(select.options);
-    const normalizedTarget = targetValue.toLowerCase().trim();
+    const options = Array.from(select.options || []);
+    const targetStr = String(targetValue);
+    const normalizedTarget = targetStr.toLowerCase().trim();
     
     // 1. Exact value match
-    let match = options.find(opt => opt.value === targetValue);
+    let match = options.find(opt => opt.value === targetStr);
     if (match) return match;
     
     // 2. Case-insensitive value match
-    match = options.find(opt => opt.value.toLowerCase() === normalizedTarget);
+    match = options.find(opt => String(opt.value ?? '').toLowerCase() === normalizedTarget);
     if (match) return match;
     
     // 3. Exact text match
-    match = options.find(opt => opt.text === targetValue);
+    match = options.find(opt => opt.text === targetStr);
     if (match) return match;
     
     // 4. Case-insensitive text match
-    match = options.find(opt => opt.text.toLowerCase() === normalizedTarget);
+    match = options.find(opt => String(opt.text ?? '').toLowerCase().trim() === normalizedTarget);
     if (match) return match;
     
-    // 5. Partial text match (value contains target or vice versa)
+    if (!normalizedTarget) {
+        return null;
+    }
+    
+    // 5. Partial text match (skip empty placeholder options)
     match = options.find(opt => {
-        const optText = opt.text.toLowerCase();
+        const optText = String(opt.text ?? '').toLowerCase().trim();
+        if (!optText) return false;
         return optText.includes(normalizedTarget) || normalizedTarget.includes(optText);
     });
     if (match) return match;
     
-    // 6. Partial value match
+    // 6. Partial value match (skip empty placeholder options)
     match = options.find(opt => {
-        const optValue = opt.value.toLowerCase();
+        const optValue = String(opt.value ?? '').toLowerCase().trim();
+        if (!optValue) return false;
         return optValue.includes(normalizedTarget) || normalizedTarget.includes(optValue);
     });
     

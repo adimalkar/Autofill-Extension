@@ -213,10 +213,12 @@
      * Set input value with React compatibility
      */
     function setReactInputValue(input, value) {
+        const previousValue = input.value !== undefined && input.value !== null ? String(input.value) : '';
+        const view = input.ownerDocument?.defaultView || window;
         const nativeSetter = Object.getOwnPropertyDescriptor(
             input.tagName === 'TEXTAREA' 
-                ? window.HTMLTextAreaElement.prototype 
-                : window.HTMLInputElement.prototype,
+                ? view.HTMLTextAreaElement.prototype 
+                : view.HTMLInputElement.prototype,
             'value'
         )?.set;
         
@@ -226,15 +228,18 @@
             input.value = value;
         }
         
+        // Reset React tracker BEFORE dispatching events so React detects the value delta
+        if (input._valueTracker && typeof input._valueTracker.setValue === 'function') {
+            const currentValue = input.value !== undefined && input.value !== null ? String(input.value) : '';
+            input._valueTracker.setValue(
+                previousValue !== currentValue ? previousValue : (currentValue === '' ? ' ' : '')
+            );
+        }
+        
         // Dispatch events
         input.dispatchEvent(new Event('input', { bubbles: true }));
         input.dispatchEvent(new Event('change', { bubbles: true }));
         input.dispatchEvent(new Event('blur', { bubbles: true }));
-        
-        // Trigger React tracker
-        if (input._valueTracker) {
-            input._valueTracker.setValue('');
-        }
     }
     
     /**
