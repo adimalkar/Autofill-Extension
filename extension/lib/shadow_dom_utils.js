@@ -62,7 +62,8 @@ export class ShadowDomEngine {
   /**
    * Dispatches synthetic events to satisfy modern React/Vue/Angular state managers.
    * Dynamically handles HTMLInputElement, HTMLTextAreaElement, HTMLSelectElement,
-   * and properly synchronizes both .value and .checked states with native prototypes.
+   * and properly synchronizes both .value and .checked states with native prototypes
+   * and React's internal _valueTracker before event dispatch.
    * 
    * @param {HTMLElement} element - The target input, textarea, or select field
    * @param {string|boolean} value - The value to inject
@@ -70,48 +71,85 @@ export class ShadowDomEngine {
   static injectValueSecurely(element, value) {
     if (!element) return;
 
+    const view = element.ownerDocument?.defaultView || globalThis;
+    const EventCtor = view?.Event || globalThis.Event;
     const isCheckable = element.type === 'checkbox' || element.type === 'radio';
-    
-    if (isCheckable) {
-      const boolVal = typeof value === 'boolean' ? value : String(value).toLowerCase() === 'true' || value === '1';
-      element.checked = boolVal;
 
+    if (isCheckable) {
+      const previousChecked = Boolean(element.checked);
+      const boolVal =
+        typeof value === 'boolean'
+          ? value
+          : String(value).toLowerCase() === 'true' || String(value) === '1';
+
+      let setViaNative = false;
       try {
-        const nativeCheckedSetter = Object.getOwnPropertyDescriptor(
-          window.HTMLInputElement.prototype,
-          'checked'
-        )?.set;
+        const inputProto = view?.HTMLInputElement?.prototype;
+        const nativeCheckedSetter = inputProto
+          ? Object.getOwnPropertyDescriptor(inputProto, 'checked')?.set
+          : null;
         if (nativeCheckedSetter) {
           nativeCheckedSetter.call(element, boolVal);
+          setViaNative = true;
         }
       } catch (e) {
         console.warn('React checkbox descriptor override failed:', e);
       }
-    } else {
-      element.value = value;
-      
-      // Determine correct prototype based on tag name
-      let proto = window.HTMLInputElement.prototype;
-      if (element instanceof HTMLTextAreaElement) {
-        proto = window.HTMLTextAreaElement.prototype;
-      } else if (element instanceof HTMLSelectElement) {
-        proto = window.HTMLSelectElement.prototype;
+
+      if (!setViaNative) {
+        element.checked = boolVal;
       }
 
+      // Reset React's value tracker BEFORE dispatching events so onChange recognizes the change
+      if (element._valueTracker && typeof element._valueTracker.setValue === 'function') {
+        const trackedPrevious =
+          previousChecked !== boolVal ? String(previousChecked) : String(!boolVal);
+        element._valueTracker.setValue(trackedPrevious);
+      }
+    } else {
+      const previousValue =
+        element.value !== undefined && element.value !== null ? String(element.value) : '';
+      const tagName = element.tagName?.toUpperCase();
+
+      let proto = view?.HTMLInputElement?.prototype;
+      if (tagName === 'TEXTAREA') {
+        proto = view?.HTMLTextAreaElement?.prototype;
+      } else if (tagName === 'SELECT') {
+        proto = view?.HTMLSelectElement?.prototype;
+      }
+
+      let setViaNative = false;
       try {
-        const nativeValueSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+        const nativeValueSetter = proto
+          ? Object.getOwnPropertyDescriptor(proto, 'value')?.set
+          : null;
         if (nativeValueSetter) {
           nativeValueSetter.call(element, value);
+          setViaNative = true;
         }
       } catch (e) {
         console.warn('React property descriptor override failed:', e);
       }
+
+      if (!setViaNative) {
+        element.value = value;
+      }
+
+      // Reset React's value tracker BEFORE dispatching events so onChange recognizes the change
+      if (element._valueTracker && typeof element._valueTracker.setValue === 'function') {
+        const currentValue =
+          element.value !== undefined && element.value !== null ? String(element.value) : '';
+        const trackedPrevious =
+          previousValue !== currentValue ? previousValue : (currentValue === '' ? ' ' : '');
+        element._valueTracker.setValue(trackedPrevious);
+      }
     }
 
-    // Simulate natural user interaction event sequence for framework listeners
-    const eventTypes = isCheckable ? ['click', 'input', 'change'] : ['focus', 'input', 'change', 'blur'];
+    // Simulate natural user interaction event sequence for framework listeners.
+    // Omit 'click' for checkables because programmatic click toggles .checked back in browsers.
+    const eventTypes = isCheckable ? ['input', 'change'] : ['focus', 'input', 'change', 'blur'];
     eventTypes.forEach(eventType => {
-      const event = new Event(eventType, {
+      const event = new EventCtor(eventType, {
         bubbles: true,
         cancelable: true,
       });
