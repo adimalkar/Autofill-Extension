@@ -13,8 +13,8 @@
 export const PATTERNS = {
     // Contact Information
     email: /[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}/g,
-    phone: /(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{4}/g,
-    phoneInternational: /\+\d{1,3}[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g,
+    phone: /(?<!\d)(?:\+?1[-.\s]?)?(?:\(\d{3}\)[-.\s]?|\d{3}[-.\s])\d{3}[-.\s]\d{4}(?!\d)|(?<!\d)(?:\+?1[-.\s]?)?\d{10}(?!\d)|(?<!\d)\d{3}[-.\s]\d{4}(?!\d)/g,
+    phoneInternational: /(?<!\d)\+\d{1,3}(?:[-.\s]?\(?\d{1,5}\)?){1,3}[-.\s]?\d{1,10}(?!\d)/g,
     
     // Professional Links
     linkedin: /(?:https?:\/\/)?(?:www\.)?linkedin\.com\/in\/[\w-]+\/?/gi,
@@ -61,13 +61,46 @@ export const SECTION_HEADERS = {
     contact: /\b(?:contact|personal\s*info(?:rmation)?)\b/i
 };
 
+const US_STATE_CODES = new Set([
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
+    'DC'
+]);
+
+const NON_PORTFOLIO_HOSTS = new Set([
+    'linkedin.com',
+    'github.com',
+    'google.com',
+    'facebook.com',
+    'twitter.com',
+    'x.com',
+    'instagram.com',
+    'youtube.com'
+]);
+
+const RECOGNIZED_GPA_SCALES = new Set(['4', '4.0', '4.00', '4.3', '4.33', '4.5', '5', '5.0', '10', '10.0']);
+
+function asText(text) {
+    return typeof text === 'string' ? text : '';
+}
+
+function cloneGlobalRegex(regex) {
+    return new RegExp(regex.source, regex.flags);
+}
+
 /**
  * Extract email addresses from text
  * @param {string} text - Resume text
  * @returns {string[]} Array of email addresses
  */
 export function extractEmails(text) {
-    const matches = text.match(PATTERNS.email) || [];
+    const input = asText(text);
+    if (!input) return [];
+
+    const matches = input.match(PATTERNS.email) || [];
     // Deduplicate and filter out common false positives
     return [...new Set(matches)].filter(email => {
         const lower = email.toLowerCase();
@@ -84,14 +117,41 @@ export function extractEmails(text) {
  * @returns {string[]} Array of phone numbers
  */
 export function extractPhones(text) {
-    const usPhones = text.match(PATTERNS.phone) || [];
-    const intlPhones = text.match(PATTERNS.phoneInternational) || [];
-    
-    // Combine and deduplicate
-    const allPhones = [...usPhones, ...intlPhones];
-    
-    // Clean up phone numbers
-    return [...new Set(allPhones.map(phone => phone.trim()))];
+    const input = asText(text);
+    if (!input) return [];
+
+    const candidates = [];
+
+    // Match international numbers first so partial US/local patterns don't split them
+    for (const match of input.matchAll(cloneGlobalRegex(PATTERNS.phoneInternational))) {
+        const value = match[0].trim();
+        const digits = value.replace(/\D/g, '');
+        if (digits.length >= 7 && digits.length <= 15) {
+            candidates.push({
+                value,
+                start: match.index,
+                end: match.index + match[0].length
+            });
+        }
+    }
+
+    for (const match of input.matchAll(cloneGlobalRegex(PATTERNS.phone))) {
+        const value = match[0].trim();
+        const digits = value.replace(/\D/g, '');
+        if (digits.length < 7 || digits.length > 15) continue;
+
+        const start = match.index;
+        const end = start + match[0].length;
+        const overlapsExisting = candidates.some(
+            c => start < c.end && end > c.start
+        );
+        if (!overlapsExisting) {
+            candidates.push({ value, start, end });
+        }
+    }
+
+    candidates.sort((a, b) => a.start - b.start);
+    return [...new Set(candidates.map(c => c.value))];
 }
 
 /**
@@ -100,7 +160,10 @@ export function extractPhones(text) {
  * @returns {string|null} LinkedIn URL or null
  */
 export function extractLinkedIn(text) {
-    const matches = text.match(PATTERNS.linkedin);
+    const input = asText(text);
+    if (!input) return null;
+
+    const matches = input.match(PATTERNS.linkedin);
     if (matches && matches.length > 0) {
         let url = matches[0];
         // Ensure https prefix
@@ -119,7 +182,10 @@ export function extractLinkedIn(text) {
  * @returns {string|null} GitHub URL or null
  */
 export function extractGitHub(text) {
-    const matches = text.match(PATTERNS.github);
+    const input = asText(text);
+    if (!input) return null;
+
+    const matches = input.match(PATTERNS.github);
     if (matches && matches.length > 0) {
         let url = matches[0];
         if (!url.startsWith('http')) {
@@ -130,27 +196,37 @@ export function extractGitHub(text) {
     return null;
 }
 
+function getHostname(url) {
+    try {
+        return new URL(url).hostname.toLowerCase();
+    } catch {
+        return '';
+    }
+}
+
 /**
  * Extract portfolio/personal website from text
  * @param {string} text - Resume text
  * @returns {string|null} Portfolio URL or null
  */
 export function extractPortfolio(text) {
-    // First get all URLs
-    const allUrls = text.match(PATTERNS.url) || [];
+    const input = asText(text);
+    if (!input) return null;
+
+    const allUrls = input.match(PATTERNS.url) || [];
     
-    // Filter out LinkedIn, GitHub, and common non-portfolio sites
-    const portfolioUrls = allUrls.filter(url => {
-        const lower = url.toLowerCase();
-        return !lower.includes('linkedin.com') &&
-               !lower.includes('github.com') &&
-               !lower.includes('google.com') &&
-               !lower.includes('facebook.com') &&
-               !lower.includes('twitter.com') &&
-               !lower.includes('instagram.com') &&
-               !lower.includes('youtube.com') &&
-               !lower.includes('mailto:');
-    });
+    const portfolioUrls = allUrls
+        .map(url => url.replace(/[.,;:!?)\]]+$/, ''))
+        .filter(url => {
+            const host = getHostname(url);
+            if (!host) return false;
+            for (const excluded of NON_PORTFOLIO_HOSTS) {
+                if (host === excluded || host.endsWith(`.${excluded}`)) {
+                    return false;
+                }
+            }
+            return true;
+        });
     
     return portfolioUrls.length > 0 ? portfolioUrls[0] : null;
 }
@@ -161,26 +237,38 @@ export function extractPortfolio(text) {
  * @returns {{value: string, scale: string}|null} GPA object or null
  */
 export function extractGPA(text) {
+    const input = asText(text);
+    if (!input) return null;
+
     // Handle various GPA formats including "GPA – 3.7", "GPA: 3.7", "GPA - 3.7"
-    const gpaPattern = /(?:GPA|Grade\s*Point\s*Average|Cumulative\s*GPA|CGPA)\s*[:\-–—]?\s*(\d\.\d{1,2})(?:\s*[\/\-–—]\s*(\d\.\d{1,2}))?/i;
-    const match = text.match(gpaPattern);
+    const gpaPattern = /(?:GPA|Grade\s*Point\s*Average|Cumulative\s*GPA|CGPA)\s*[:\-–—]?\s*(\d+(?:\.\d{1,2})?)(?:\s*\/\s*(\d+(?:\.\d{1,2})?))?/i;
+    const match = input.match(gpaPattern);
     
     if (match) {
-        return {
-            value: match[1],
-            scale: match[2] || '4.0'
-        };
+        const valueNum = parseFloat(match[1]);
+        const scale = match[2] || '4.0';
+        const scaleNum = parseFloat(scale);
+        if (valueNum > 0 && (!match[2] || valueNum <= scaleNum)) {
+            return {
+                value: match[1],
+                scale
+            };
+        }
     }
     
-    // Try to find standalone GPA format like "3.8/4.0"
-    const standalonePattern = /\b(\d\.\d{1,2})\s*\/\s*(\d\.\d{1,2})\s*(?:GPA)?\b/i;
-    const standaloneMatch = text.match(standalonePattern);
-    
-    if (standaloneMatch) {
-        return {
-            value: standaloneMatch[1],
-            scale: standaloneMatch[2]
-        };
+    // Standalone GPA format like "3.8/4.0" (require recognized GPA scale to avoid version ratios like "2.0/3.0")
+    const standalonePattern = /\b(\d\.\d{1,2})\s*\/\s*(\d+(?:\.\d{1,2})?)\s*(?:GPA)?\b/gi;
+    let standaloneMatch;
+    while ((standaloneMatch = standalonePattern.exec(input)) !== null) {
+        const valueNum = parseFloat(standaloneMatch[1]);
+        const scaleStr = standaloneMatch[2];
+        const scaleNum = parseFloat(scaleStr);
+        if (valueNum > 0 && valueNum <= scaleNum && RECOGNIZED_GPA_SCALES.has(scaleStr)) {
+            return {
+                value: standaloneMatch[1],
+                scale: scaleStr
+            };
+        }
     }
     
     return null;
@@ -192,7 +280,9 @@ export function extractGPA(text) {
  * @returns {string[]} Array of date strings
  */
 export function extractDates(text) {
-    const monthYearDates = text.match(PATTERNS.dateMonthYear) || [];
+    const input = asText(text);
+    if (!input) return [];
+    const monthYearDates = input.match(PATTERNS.dateMonthYear) || [];
     return [...new Set(monthYearDates)];
 }
 
@@ -202,11 +292,14 @@ export function extractDates(text) {
  * @returns {Array<{start: string, end: string}>} Array of date range objects
  */
 export function extractDateRanges(text) {
+    const input = asText(text);
+    if (!input) return [];
+
     const ranges = [];
     const pattern = /(?:(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s*\.?\s*(\d{4}))\s*[-–—to]+\s*(?:(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s*\.?\s*(\d{4})|(Present|Current))/gi;
     
     let match;
-    while ((match = pattern.exec(text)) !== null) {
+    while ((match = pattern.exec(input)) !== null) {
         ranges.push({
             start: `${match[1]} ${match[2]}`,
             end: match[5] || `${match[3]} ${match[4]}`
@@ -219,13 +312,18 @@ export function extractDateRanges(text) {
 /**
  * Extract skills from text
  * @param {string} text - Resume text
- * @returns {{technical: string[], frameworks: string[], tools: string[], databases: string[]}} Skills object
+ * @returns {{technical: string[], frameworks: string[], tools: string[], databases: string[], all: string[]}} Skills object
  */
 export function extractSkills(text) {
-    const languages = [...new Set((text.match(PATTERNS.programmingLanguages) || []).map(s => s.trim()))];
-    const frameworks = [...new Set((text.match(PATTERNS.frameworks) || []).map(s => s.trim()))];
-    const tools = [...new Set((text.match(PATTERNS.tools) || []).map(s => s.trim()))];
-    const databases = [...new Set((text.match(PATTERNS.databases) || []).map(s => s.trim()))];
+    const input = asText(text);
+    if (!input) {
+        return { technical: [], frameworks: [], tools: [], databases: [], all: [] };
+    }
+
+    const languages = [...new Set((input.match(PATTERNS.programmingLanguages) || []).map(s => s.trim()))];
+    const frameworks = [...new Set((input.match(PATTERNS.frameworks) || []).map(s => s.trim()))];
+    const tools = [...new Set((input.match(PATTERNS.tools) || []).map(s => s.trim()))];
+    const databases = [...new Set((input.match(PATTERNS.databases) || []).map(s => s.trim()))];
     
     return {
         technical: languages,
@@ -242,7 +340,9 @@ export function extractSkills(text) {
  * @returns {string[]} Array of degree types found
  */
 export function extractDegrees(text) {
-    const matches = text.match(PATTERNS.degree) || [];
+    const input = asText(text);
+    if (!input) return [];
+    const matches = input.match(PATTERNS.degree) || [];
     return [...new Set(matches)];
 }
 
@@ -252,74 +352,67 @@ export function extractDegrees(text) {
  * @returns {string|null} Extracted name or null
  */
 export function extractName(text) {
-    // Clean up the text - remove excessive whitespace
-    const cleanText = text.replace(/\s+/g, ' ').trim();
-    
-    // Try to get name from the very beginning (first line typically)
-    const lines = cleanText.split(/[\n\r]+/).filter(line => line.trim());
-    
-    if (lines.length > 0) {
-        const firstLine = lines[0].trim();
-        
-        // Check if first line looks like a name (2-4 capitalized words, no special chars)
-        // Pattern 1: Standard case "John Doe Smith"
-        const namePattern = /^([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})$/;
-        const match = firstLine.match(namePattern);
-        
+    const input = asText(text);
+    if (!input.trim()) return null;
+
+    // Split on newlines before collapsing horizontal whitespace so line boundaries stay intact
+    const lines = input
+        .split(/[\r\n]+/)
+        .map(line => line.replace(/[ \t]+/g, ' ').trim())
+        .filter(Boolean);
+
+    if (lines.length === 0) return null;
+
+    const nonNameLinePattern = /\b(?:resume|cv|curriculum|vitae|portfolio|engineer|developer|manager|summary|objective|experience|education|skills|contact|profile)\b|@|\d/i;
+    const namePattern = /^([A-Z][a-zA-Z'-]+(?:\s+(?:[A-Z]\.?|[A-Z][a-zA-Z'-]+)){1,3})$/;
+
+    for (const rawLine of lines.slice(0, 3)) {
+        const candidate = rawLine.split(/\s*[|•·]\s*/)[0].trim();
+        if (!candidate || candidate.length >= 60) continue;
+        if (nonNameLinePattern.test(candidate)) continue;
+
+        const match = candidate.match(namePattern);
         if (match) {
+            const words = match[1].split(/\s+/);
+            const isAllCaps = words.every(w => /^[A-Z]{2,}$/.test(w) || /^[A-Z]\.?$/.test(w));
+            if (isAllCaps) {
+                return words
+                    .map(w => (w.length <= 2 && w.endsWith('.'))
+                        ? w
+                        : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                    .join(' ');
+            }
             return match[1];
         }
-        
-        // Pattern 2: ALL CAPS name "JOHN DOE SMITH"
-        const allCapsPattern = /^([A-Z]{2,}(?:\s+[A-Z]{2,}){1,3})$/;
-        const allCapsMatch = firstLine.match(allCapsPattern);
-        
-        if (allCapsMatch) {
-            // Convert to Title Case
-            return allCapsMatch[1].toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-        }
-        
-        // Try first line if it's short enough and doesn't contain common non-name words
-        if (firstLine.length < 50 && 
-            !firstLine.match(/resume|cv|curriculum|vitae|portfolio|engineer|developer|manager|summary|objective|experience/i)) {
-            
-            // Check if it's mostly uppercase words (likely an ALL CAPS name)
-            const upperWords = firstLine.match(/\b[A-Z]{2,}\b/g);
-            if (upperWords && upperWords.length >= 2 && upperWords.length <= 4) {
-                // Convert to Title Case
-                return upperWords.join(' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-            }
-            
-            // Extract just the capitalized words
-            const words = firstLine.match(/[A-Z][a-z]+/g);
-            if (words && words.length >= 2 && words.length <= 4) {
-                return words.join(' ');
-            }
-        }
     }
-    
+
     return null;
 }
 
 /**
  * Extract location information from text
  * @param {string} text - Resume text
- * @returns {{city: string, state: string, zip: string}|null} Location object or null
+ * @returns {{city: string, state: string, zip: string|null}|null} Location object or null
  */
 export function extractLocation(text) {
-    // Try to match "City, ST" or "City, State" pattern
-    const cityStatePattern = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?),\s*([A-Z]{2})\b/;
-    const match = text.match(cityStatePattern);
-    
-    if (match) {
-        const zipMatch = text.match(PATTERNS.zipCode);
+    const input = asText(text);
+    if (!input) return null;
+
+    // Match "City, ST" with optional adjacent ZIP code, validating against real US state codes
+    const cityStatePattern = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2}),\s*([A-Z]{2})\b(?:[ \t]+(\d{5}(?:-\d{4})?))?/g;
+    let match;
+    while ((match = cityStatePattern.exec(input)) !== null) {
+        const state = match[2];
+        if (!US_STATE_CODES.has(state)) {
+            continue;
+        }
         return {
             city: match[1],
-            state: match[2],
-            zip: zipMatch ? zipMatch[0] : null
+            state,
+            zip: match[3] || null
         };
     }
-    
+
     return null;
 }
 
@@ -329,6 +422,9 @@ export function extractLocation(text) {
  * @returns {string|null} University name or null
  */
 export function extractUniversity(text) {
+    const input = asText(text);
+    if (!input) return null;
+
     // Common university patterns
     const patterns = [
         // "University of X" or "X University"
@@ -338,7 +434,7 @@ export function extractUniversity(text) {
     ];
     
     for (const pattern of patterns) {
-        const match = text.match(pattern);
+        const match = input.match(pattern);
         if (match) {
             return match[1].trim();
         }
@@ -353,17 +449,20 @@ export function extractUniversity(text) {
  * @returns {{degree: string, major: string}|null} Degree info or null
  */
 export function extractDegreeInfo(text) {
-    // Pattern for "Master of Science in Data Science" or "Bachelor of Engineering in Computer Engineering"
-    const degreePattern = /(?:Master(?:'s)?|Bachelor(?:'s)?|Ph\.?D\.?|M\.?S\.?|B\.?S\.?|B\.?E\.?|M\.?E\.?|M\.?B\.?A\.?|B\.?A\.?|M\.?A\.?)\s*(?:of\s+)?(?:Science|Arts|Engineering|Business|Technology)?\s*(?:in\s+)?([A-Za-z\s]+?)(?:\s*\||,|\n|GPA|$)/i;
-    const match = text.match(degreePattern);
+    const input = asText(text);
+    if (!input) return null;
+
+    const degreeTypeRegex = /(Master(?:'s)?|Bachelor(?:'s)?|Ph\.?D\.?|M\.?S\.?|B\.?S\.?|B\.?E\.?|M\.?E\.?|M\.?B\.?A\.?|B\.?A\.?|M\.?A\.?)\s*(?:of\s+)?(Science|Arts|Engineering|Business|Technology)?/i;
+    const degreePattern = new RegExp(
+        `(${degreeTypeRegex.source})\\s*(?:,|in)?\\s*(?:in\\s+)?([A-Za-z][A-Za-z\\s&/-]+?)(?=\\s*(?:\\||,|\\n|\\r|–|—|-|\\bGPA\\b|\\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\\b|\\d|$))`,
+        'i'
+    );
+    const match = input.match(degreePattern);
     
     if (match) {
-        // Extract the degree type
-        const degreeTypeMatch = text.match(/(Master(?:'s)?|Bachelor(?:'s)?|Ph\.?D\.?|M\.?S\.?|B\.?S\.?|B\.?E\.?|M\.?E\.?|M\.?B\.?A\.?)\s*(?:of\s+)?(Science|Arts|Engineering|Business|Technology)?/i);
-        
         return {
-            degree: degreeTypeMatch ? degreeTypeMatch[0].trim() : '',
-            major: match[1].trim()
+            degree: match[1].trim(),
+            major: match[4].trim()
         };
     }
     
@@ -376,11 +475,14 @@ export function extractDegreeInfo(text) {
  * @returns {string[]} Array of company names
  */
 export function extractCompanies(text) {
+    const input = asText(text);
+    if (!input) return [];
+
     const companies = [];
     
     // Pattern: "Company Name, (Role) – Location" or "Company Name – Location"
     // Common patterns for company lines
-    const lines = text.split(/[\n\r]+/);
+    const lines = input.split(/[\n\r]+/);
     
     for (const line of lines) {
         // Check if line contains location pattern (usually indicates company line)
@@ -401,6 +503,9 @@ export function extractCompanies(text) {
  * @returns {string[]} Array of job titles
  */
 export function extractJobTitles(text) {
+    const input = asText(text);
+    if (!input) return [];
+
     const titles = [];
     
     // Common job title patterns
@@ -416,7 +521,7 @@ export function extractJobTitles(text) {
     
     for (const pattern of titlePatterns) {
         let match;
-        while ((match = pattern.exec(text)) !== null) {
+        while ((match = pattern.exec(input)) !== null) {
             if (match[1] && !titles.includes(match[1])) {
                 titles.push(match[1].trim());
             }
@@ -432,6 +537,9 @@ export function extractJobTitles(text) {
  * @returns {string[]} Array of certification names
  */
 export function extractCertifications(text) {
+    const input = asText(text);
+    if (!input) return [];
+
     const certs = [];
     
     // Look for common certification patterns
@@ -444,7 +552,7 @@ export function extractCertifications(text) {
     ];
     
     for (const pattern of certPatterns) {
-        const matches = text.match(pattern);
+        const matches = input.match(pattern);
         if (matches) {
             certs.push(...matches.map(m => m.trim()));
         }
@@ -459,8 +567,11 @@ export function extractCertifications(text) {
  * @returns {Object} Object with section names as keys and content as values
  */
 export function splitIntoSections(text) {
+    const input = asText(text);
+    if (!input) return {};
+
     const sections = {};
-    const lines = text.split(/[\n\r]+/);
+    const lines = input.split(/[\n\r]+/);
     
     let currentSection = 'header';
     let currentContent = [];
